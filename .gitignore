@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+backend/memora.db
+backend/.env
+.env
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+# Editors
+.vscode/
+.idea/
+.DS_Store
