@@ -1,6 +1,13 @@
 /** Shared types for the MEMORA AI frontend. */
 
-export type Message = { role: 'assistant' | 'user'; text: string }
+export type Message = {
+  role: 'assistant' | 'user'
+  text: string
+  time?: string
+  saved?: boolean
+  mode?: string
+  intent?: string
+}
 
 export type Memory = {
   id: number
@@ -8,6 +15,8 @@ export type Memory = {
   category: string
   created_at: string
   updated_at?: string
+  text?: string
+  tag?: string
 }
 
 export type Reminder = {
@@ -33,4 +42,22 @@ export type ChatResponse = {
   saved: boolean
   pending: ChatPending | null
   normalized?: string
+  ai_provider?: string
+  ai_model?: string
+  error?: string
 }
+
+export type HealthResponse = {
+  status: string
+  app: string
+  version?: string
+  languages: string[]
+  ai_provider: string
+  ai_model?: string
+  configured_model?: string
+  mode: string
+  connected?: boolean
+  error?: string
+  message?: string
+}
+

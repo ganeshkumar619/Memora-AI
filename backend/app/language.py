@@ -66,9 +66,10 @@ _TANGLISH_MARKERS = frozenset(
     irukku irukka irukkavalai irundhu illa illai venum vanakkam kelvi
     pannu pannunga pannum pannanum pannava sollu sollra solradhu
     theriyum theriyadhu theriyuma kidaikkum kidadikkum kidaiya
-    vechirukka venchirukka veni venunga theerpu thedi thevi
+    vechirukka vechirukke vechirukinga vechiruka venchirukka veni venunga theerpu thedi thevi
     mattum mele iruppu
-    vachiko vechiko vachukko vechuko vechiruka nyabagam ninaivil sonnen sonna sonnadhu
+    vachiko vechiko vachukko vechuko vachru vechru vachiruka vachirukka vachuruka nyabagam ninaivil sonnen sonna sonnadhu
+    naalaiku naalaikku nalaiku nalaikki innikku innaiku nethu netthu kandippa
     """.split()
 )
 
@@ -115,7 +116,20 @@ def detect_language(text: str) -> str:
 PHRASES: Dict[str, List[str]] = {
     "save": [
         # --- Tamil script -------------------------------------------------
+        "என்று ஞாபகம் வைத்துக்கொள்",
+        "என்று ஞாபகம் வைத்துக்கொள்ளுங்கள்",
+        "என்று ஞாபகம் வச்சுக்கோ",
+        "என்று ஞாபகம் வச்சுக்கோங்க",
+        "என்று ஞாபகம் வை",
+        "என்று நினைவில் வைத்துக்கொள்",
+        "என்று நினைவில் வைத்துக்கொள்ளுங்கள்",
+        "என்று நினைவில் வை",
+        "என ஞாபகம் வைத்துக்கொள்",
+        "என ஞாபகம் வை",
+        "என நினைவில் வை",
         "சேமித்து வைத்து வை",
+        "சேமித்து வைத்துக்கொள்",
+        "சேமித்துக்கொள்ளுங்கள்",
         "சேமித்து வை",
         "சேமிக்கவும்",
         "சேமியுங்கள்",
@@ -127,18 +141,29 @@ PHRASES: Dict[str, List[str]] = {
         "பதிவு செய்யவும்",
         "பதிவு செய்யுங்கள்",
         "பதிவு",
+        "நினைவில் வைத்துக்கொள்",
+        "நினைவில் வைத்துக்கொள்ளுங்கள்",
+        "நினைவில் வச்சுக்கோ",
         "நினைவில் வைத்து வை",
         "நினைவில் வை",
         "நினைவில் கொள்",
+        "குறித்துக் கொள்",
+        "குறித்துக்கொள்",
+        "குறித்துக் கொள்ளுங்கள்",
         "குறிப்பிடு",
         "குறிப்பிடுங்கள்",
         "குறிப்பு எழுது",
         "ஞாப்பி வை",
         "ஞாபகம் வைத்துக்கொள்",
+        "ஞாபகம் வைத்துக்கொள்ளுங்கள்",
         "ஞாபகம் வச்சுக்கோ",
+        "ஞாபகம் வச்சுக்கோங்க",
         "ஞாபகம் வை",
-        "நினைவில் வைத்துக்கொள்",
-        "நினைவில் வச்சுக்கோ",
+        "சேவ் பண்ணு",
+        "சேவ் பண்ணிக்கோ",
+        "சேவ் பண்ணுங்க",
+        "நோட் பண்ணு",
+        "நோட் பண்ணிக்கோ",
         # --- Tanglish -----------------------------------------------------
         "nu nyabagam vachiko",
         "nu nyabagam vechuko",
@@ -146,14 +171,21 @@ PHRASES: Dict[str, List[str]] = {
         "nu nyabagam vechiko",
         "nu nyabagam vechikonga",
         "nu nyabagam vachikonga",
+        "nu nyabagam vechurunga",
+        "nu nyabagam vachurunga",
+        "nu nyabagam vachru",
+        "nu nyabagam vechru",
         "nyabagam vachiko",
         "nyabagam vechuko",
         "nyabagam vachukko",
         "nyabagam vechiko",
         "nyabagam vechikonga",
         "nyabagam vachikonga",
+        "nyabagam vachru",
+        "nyabagam vechru",
         "ninaivil vechuko",
         "ninaivil vachiko",
+        "ninaivil vachukko",
         "save pannu pannunga",
         "save pannu",
         "save pannunga",
@@ -161,14 +193,29 @@ PHRASES: Dict[str, List[str]] = {
         "save pannanum",
         "save karthu",
         "save it",
+        "save",
         "save this",
         "save that",
-        "save",
+        "idha remember panniko",
+        "adha remember panniko",
+        "idha remember pannikonga",
+        "adha remember pannikonga",
+        "remember panniko",
+        "remember pannikonga",
         "remember pannu",
         "remember pannunga",
+        "idha nyabagam vachiko",
+        "adha nyabagam vachiko",
+        "idha nyabagam vechuko",
+        "adha nyabagam vechuko",
+        "idha save pannu",
+        "adha save pannu",
+        "idha save panniko",
+        "adha save panniko",
         "remember it",
         "remember this",
         "remember that",
+        "remember to",
         "remember",
         "note down",
         "note it down",
@@ -176,6 +223,7 @@ PHRASES: Dict[str, List[str]] = {
         "take a note",
         "make a note of",
         "note pannu",
+        "note pannikonga",
         "note it",
         "note that",
         "record pannu",
@@ -186,7 +234,29 @@ PHRASES: Dict[str, List[str]] = {
     ],
     "list": [
         # --- Tamil script -------------------------------------------------
+        "எனக்கு என்ன ஞாபகம் வைத்திருக்கிறாய்",
+        "என்ன ஞாபகம் வைத்திருக்கிறாய்",
+        "என்ன ஞாபகம் வச்சிருக்க",
+        "என்ன ஞாபகம் வச்சிருக்கீங்க",
+        "என்ன ஞாபகம் இருக்கு",
+        "எனக்கு என்ன ஞாபகம் இருக்கு",
+        "ஞாபகம் வைத்திருக்கிறாய்",
+        "ஞாபகம் வச்சிருக்க",
+        "ஞாபகம் வச்சிருக்கீங்க",
+        "என்னெல்லாம் ஞாபகம் வச்சிருக்க",
+        "என்னெல்லாம் ஞாபகம் வைத்திருக்கிறாய்",
+        "என்ன சேமித்திருக்கிறாய்",
+        "என்ன சேமித்து வைத்திருக்கிறாய்",
         "என்ன சேமித்துள்ளது",
+        "என்ன சேமித்திருக்க",
+        "நினைவில் என்ன இருக்கு",
+        "நினைவில் என்ன வைத்திருக்கிறாய்",
+        "என் நினைவுகளைக் காட்டு",
+        "என் நினைவுகளைக் காண்பி",
+        "என் நினைவுகள் என்ன",
+        "சேமித்த நினைவுகள்",
+        "சேமித்த நினைவுகளைக் காட்டு",
+        "சேமித்த நினைவுகளைக் காண்பி",
         "என்ன விட்டுள்ளது",
         "என்ன தெரியும்",
         "எனக்கு என்ன தெரியும்",
@@ -205,14 +275,23 @@ PHRASES: Dict[str, List[str]] = {
         "காண்",
         # --- Tanglish -----------------------------------------------------
         "enna nyabagam vechiruka",
+        "enna nyabagam vechirukke",
+        "enna nyabagam vechirukinga",
+        "enna nyabagam vachiruka",
+        "enna nyabagam vachirukka",
+        "enna nyabagam vachurukka",
+        "enna nyabagam vachuruka",
+        "enna nyabagam vachirukinga",
         "enna nyabagam irukku",
         "enna nyabagam irukka",
-        "enna nyabagam vechirukke",
-        "enna theriyum",
-        "enna theriyadhu",
+        "enaku enna nyabagam vechiruka",
+        "enaku enna nyabagam irukku",
         "en memories enna irukku",
         "en memories enna",
+        "en memory enna irukku",
         "en memory enna",
+        "enna theriyum",
+        "enna theriyadhu",
         "enaku theriyadhu",
         "eppo enna irukku",
         "enna irukku",
@@ -517,14 +596,39 @@ RELATIVE_DATES = (
     "this month",
     "this evening",
     "this morning",
+    "yesterday",
+    # --- Tanglish -------------------------------------------------------
+    "naala marunaal",
+    "naalaikku kaalaila",
+    "naalaikku evening",
+    "naalaikku",
+    "naalaiku",
+    "nalaiku",
+    "nalaikki",
+    "innikku",
+    "innaiku",
+    "nethu",
+    "netthu",
     # --- Tamil script ---------------------------------------------------
+    "நாளை மறுநாள்",
+    "நாளை மறுதினம்",
     "நாளை மாலை",
     "நாளை மாலையில்",
+    "நாளை காலை",
+    "நாளை காலையில்",
+    "நாளை இரவு",
+    "நாளைக்கு",
+    "நாளைக்கி",
     "நாளை",
     "நாளைய",
+    "இன்னைக்கு",
+    "இன்னிக்கு",
     "இன்று",
+    "இன்றைய",
     "இந்நாள்",
     "இப்போது",
+    "நேற்று",
+    "நேத்து",
     "வரும் வாரம்",
     "அடுத்த வாரம்",
     "அடுத்த மாதம்",
@@ -635,13 +739,18 @@ _QUESTION_NOISE_WORDS = frozenset(
     show list ur pls kindly now also any some much many exactly actually but
     so if then than as at by with from up out all both each few more most other
     such only own same too very just
+    en ennoda ennudaiya un unnoda unga ungala unna
     enna enaku eppo theriyuma theriyum theriyadhu sollu sollunga solla sollirukka
-    naan namma unga unna yennal kaagitha mele vachi irukku irukka illai thevai
-    nu sonnen sonna sonnadhu vechiruka vechirukken vachiko nyabagam ninaivil eppoi enga yenga yaar yaaru edhu
+    naan namma yennal kaagitha mele vachi irukku irukka illai thevai
+    nu sonnen sonna sonnadhu vechiruka vechirukka vechirukke vechirukinga vechirukken
+    vachiruka vachirukka vachuruka vachuko vachiko vachukko vachru vechru
+    nyabagam ninaivil eppoi enga yenga yaar yaaru edhu
     என் எனது என்னது என்ன எது எப்படி யார் எங்கே எப்போது ஏன்
     தெரியுமா தெரிய சொல்ல சொல்லு சொல்லுங்கள் பற்றி ஆக இது அது
     நான் நீ உங்கள் எனக்கு எனக்குச் கூறு கூறிய விளக்கு என்னை என்னைப்
     சொன்னேன் சொன்னது ஞாபகம் நினைவு
+    வைத்திருக்கிறாய் வைத்திருக்கின்றாய் வைத்திருக்கிறேன் வச்சிருக்க வச்சிருக்கீங்க வச்சிருக்கா
+    சேமித்திருக்கிறாய் சேமித்துள்ளாய் சேமித்தவை
     பல எல்லா
     """.split()
 )
@@ -831,9 +940,11 @@ def extract_save_content(text: str, language: str = LANG_ENGLISH) -> str:
     body = _remove_matches(text, ("save",))
     body = _strip_leading_fillers(body, language)
     body = _strip_punctuation(body)
-    # Strip trailing colloquial markers such as "nu", "endru", "ena"
-    body = re.sub(r"(?:\s+|^)nu\s*$", "", body, flags=re.IGNORECASE)
-    body = re.sub(r"(?:\s+|^)(?:என்று|என)\s*$", "", body)
+    # Strip leading colloquial vocatives such as "machi", "machan", "nanba"
+    body = re.sub(r"^(?:machi|machan|nanba|bro|dude|நண்பா|தோழா)[,! ]+\s*", "", body, flags=re.IGNORECASE)
+    # Strip trailing colloquial markers such as "nu", "endru", "ena", "antha", "idha", "adha"
+    body = re.sub(r"(?:\s+|^)(?:nu|idha|adha|ithai|adhai|இதனை|இதை|அதை|என்று|என|என்ற)\s*$", "", body, flags=re.IGNORECASE)
+    body = re.sub(r"^(?:that|என்று|என)\s+", "", body, flags=re.IGNORECASE)
     return _strip_punctuation(body)
 
 

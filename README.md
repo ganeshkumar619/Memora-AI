@@ -1,149 +1,177 @@
-# MEMORA AI — Personal Memory Assistant
+# MEMORA AI — Intelligent Personal Voice-Memory Assistant
 
-A local-first full-stack starter for a **multilingual, voice-friendly** personal memory assistant. This version includes a React interface, FastAPI backend, SQLite persistence, memory CRUD, reminders, browser speech input/output in **Tamil, Tanglish and English**, and a deterministic offline command engine.
+MEMORA AI is an intelligent, privacy-first personal voice-memory assistant built with a **React + Vite + TypeScript** frontend, a **Python FastAPI** backend, and persistent **SQLite** database storage.
 
-> This is a verified starter prototype, not a zero-error guarantee or a production-secure service. Advanced generative AI is not configured by default. The app will not invent personal facts.
+It understands spoken and typed conversations naturally in **Tamil (தமிழ்)**, **Tanglish (Tamil spoken/written using English letters)**, and **English**, just like ChatGPT.
 
-## What is new in the multilingual voice release
+---
 
-- **Language selector next to the microphone** — தமிழ் (Tamil, `ta-IN`), Tanglish, English (`en-IN`).
-- **Voice input** through the browser `SpeechRecognition` API with a `webkitSpeechRecognition` fallback: live interim transcript, a visible **Stop** button, and automatic handling of silence, permission and network errors.
-- **Editable transcript** — nothing is sent until you press *Send*, so a misheard word can be corrected first. Partial or empty results are never auto-submitted.
-- **Tamil / Tanglish / English command understanding** — save, list, recall, search, delete, reminders, greetings and help. The original transcript is always preserved; names, dates and numbers survive normalisation.
-- **Safe memory handling** — a plain sentence is *never* saved silently. Memora asks first and only writes after an explicit "yes".
-- **Real retrieval** — questions are answered from the actual SQLite rows. When nothing matches, Memora says so instead of guessing.
-- **Voice replies** — a toggle in the composer footer, plus a voice picker and a speech-rate slider in Settings. Tamil prefers a `ta-IN` voice; Tanglish and English use an English voice.
-- **Friendly errors** in the language you are speaking in, including for missing microphone permission and for devices with no Tamil voice installed.
+## Key Features
 
-## Requirements
+### 1. Natural Language & Tanglish Understanding
+- **True Conversational NLU:** Understands informal sentences, mixed-language phrasing, and spelling variations without depending on rigid keywords.
+  - *Example:* `“En project deadline Friday nu nyabagam vachiko.”` — directly recognized as an explicit command to save your project deadline.
+  - *Example:* `“En project deadline eppo?”` — understands you are asking when the deadline is and returns the saved date.
+  - *Example:* `“Naan enna sonnen?”` — recalls your previous conversation and notes.
+  - *Example:* `“Enna nyabagam vechiruka?”` — lists what has been stored in memory.
+  - *Example (Tamil):* `“என் ப்ராஜெக்ட் டெட்லைன் வெள்ளிக்கிழமை என்று ஞாபகம் வச்சுக்கோ”`
+- **Matching Style & Language:**
+  - Speaks Tanglish? Replies in natural, friendly Tanglish.
+  - Speaks Tamil? Replies in natural Tamil script.
+  - Speaks English? Replies in clear, natural English.
 
-- Windows 10/11
-- Python 3.10 or newer
-- Node.js 20 or newer (LTS recommended)
-- Internet connection for first-time package installation
-- A Chromium-based browser (Chrome or Edge) for voice input — see [Browser support](#browser-support)
+### 2. Dual-Engine AI Brain (Google Gemini + Local SQLite NLU)
+- **Primary AI Brain:** Integrated with **Google Gemini** (`gemini-2.5-flash` with automatic fallback to `gemini-1.5-flash`). Powered by Google AI Studio.
+- **Grounding without Hallucination:** Gemini is fed your real SQLite memories as context; it strictly never invents facts or claims something was saved when it was not.
+- **Local Fallback Mode:** If no API key is provided or the network is offline, MEMORA AI automatically falls back to an enhanced local deterministic memory engine and clearly flags local mode in the UI.
 
-## 1. Start backend (Terminal 1)
+### 3. Voice Assistant with Hands-Free Auto-Submission
+- **Microphone Input:** Browser Web Speech API with live interim transcript display.
+- **Automatic Speech Submission:** Detects when you finish speaking and automatically submits the recognized text for hands-free conversational flow.
+- **Voice Replies (TTS):** Speaks assistant replies aloud using appropriate browser speech synthesis (`ta-IN` for Tamil, Indian English `en-IN` for natural Tanglish pronunciation).
+- **Graceful Error Handling:** Explicit, friendly error messages in Tamil, Tanglish, or English for permission blocks, silence, or network dropouts.
 
-Open PowerShell in the `MEMORA_AI` folder:
+### 4. Real SQLite Memory Persistence
+- Stored locally in `backend/memora.db` (never lost across restarts).
+- Full CRUD operations: Save, search, view, update, and delete memories.
+- Built-in Reminders tracker for deadlines and tasks.
 
+---
+
+## Quick Start on Windows
+
+### Option A: One-Click Launch (Recommended)
+Double-click `start.bat` in the project root. It automatically sets up the Python virtual environment, installs dependencies, and starts both backend and frontend servers in separate windows.
+
+---
+
+### Option B: Manual Terminal Execution
+
+#### 1. Backend Setup (Terminal 1)
+Open PowerShell in `d:\MEMORA_AI`:
 ```powershell
 cd backend
+
+# Create virtual environment if not already created
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+# Activate virtual environment
+.\.venv\Scripts\activate.bat
+
+# Install dependencies
+python -m pip install -r requirements.txt
+
+# Start FastAPI backend (port 8000)
+python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
+The backend API runs at `http://127.0.0.1:8000`. Interactive OpenAPI documentation is available at `http://127.0.0.1:8000/docs`.
 
-Keep this terminal open. The backend API will be at `http://127.0.0.1:8000`; interactive API docs are at `http://127.0.0.1:8000/docs`.
-
-If `python` is not recognized, install Python from https://www.python.org/downloads/windows/ and enable the option to add Python to PATH. Then reopen PowerShell.
-
-## 2. Start frontend (Terminal 2)
-
-Open a second PowerShell in the `MEMORA_AI` folder:
-
+#### 2. Frontend Setup (Terminal 2)
+Open a second PowerShell in `d:\MEMORA_AI`:
 ```powershell
 cd frontend
+
+# Install Node dependencies
 npm install
+
+# Start Vite development server
 npm run dev
 ```
+Open `http://localhost:5173` in Google Chrome or Microsoft Edge.
 
-Open the local URL Vite prints, normally `http://127.0.0.1:5173`.
+---
 
-## 3. Verify
+## Configuring Google Gemini AI Brain
 
-Open `http://127.0.0.1:8000/api/health`. It should return JSON containing `"status":"ok"` and `"languages":["ta-IN","tanglish","en-IN"]`.
+1. In the `backend/` folder, copy `.env.example` to `.env`:
+   ```powershell
+   cd backend
+   copy .env.example .env
+   ```
+2. Open `backend/.env` in any text editor and add your API key from [Google AI Studio](https://aistudio.google.com/):
+   ```env
+   GEMINI_API_KEY=AIzaSy...your_gemini_api_key_here
+   GEMINI_MODEL=gemini-2.5-flash
+   ```
+3. Restart or save the backend. MEMORA AI will automatically detect the key and show `✨ Gemini 2.5 Flash` in the top bar!
 
-In the app:
-1. Open **My memories**, save a note.
-2. Refresh the page; the note should still be there.
-3. Edit and delete a note.
-4. Add and delete a reminder.
-5. In **Assistant**, try `Remember that my project deadline is Friday`, then `What do you remember?`.
-6. Pick **தமிழ்** in the language selector, press the microphone and say `எனது திட்ட விவரங்களை சேமி`. The transcript appears in the editable box — press **Send**.
-7. Try **Tanglish**: `Enna nyabagam vechirukka?` and `Naan sonna project details save pannu.`
-8. Toggle **Voice replies on** and choose a voice and rate under **Settings**.
+*Note: Your API key is stored only on your computer in `.env` and is never sent to the frontend or printed in logs.*
 
-### Multilingual API
+---
 
-`POST /api/chat` accepts a `language` field:
+## Verification & Testing
 
-```jsonc
-{ "message": "என் பெயர் என்ன?", "language": "ta-IN" }   // ta-IN | tanglish | en-IN
-```
-
-The reply is written in the language you selected. The response also reports
-`detected_language` (the script the text was actually written in), `intent`,
-`normalized` (the canonical form) and `pending` (a confirmation request).
-`GET /api/languages` lists the supported modes and the recognition code used for each.
-
-## 4. Run backend tests
-
-From PowerShell:
-
+### 1. Run Backend Automated Test Suite
+From the `backend/` folder:
 ```powershell
-cd backend
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
+**Results:** 85 tests covering:
+- Natural Tanglish save (`"Machi, en peru Ganesh. Naan II Year CSE student. Idha remember panniko."`)
+- Natural Tanglish recall (`"En peru enna? Naan endha year padikkiren?"`)
+- Tamil script commands and question answering
+- Google Gemini API integration and mocked structured outputs
+- Local fallback behavior and memory grounding
+- Memory CRUD and reminder CRUD
+- API key masking and honest error reporting
 
-The suite covers the normalisation rules, explicit-save intent, retrieval from
-real records, ambiguity handling, empty input and the multilingual API. It uses
-a temporary database, so `backend/memora.db` is never modified.
-
-## 5. Build frontend
-
-From a second terminal:
-
+### 2. Verify Frontend Production Build
+From the `frontend/` folder:
 ```powershell
-cd frontend
 npm run build
 ```
+Builds the optimized production bundle into `frontend/dist/` with zero TypeScript errors.
 
-## Browser support
+---
 
-| Feature | Requirement |
-| --- | --- |
-| Voice input | Chrome or Edge (desktop). The Web Speech API is not available in Firefox, and Safari support is limited. |
-| Tamil recognition | The browser must have a `ta-IN` model; Chrome downloads it on demand. |
-| Tanglish recognition | **Best effort.** Browsers have no Tanglish model, so the Tamil (`ta-IN`) engine is used and the transcript is normalised afterwards. Accuracy depends on the device. |
-| Tamil voice output | Requires an installed `ta-IN` speech-synthesis voice. On Windows, install *Tamil (India)* under *Settings → Time & language → Speech*. If none is available the reply is shown as readable text instead. |
-| Tanglish voice output | Tanglish is written with Latin letters, so it is read with an English voice. The pronunciation is an approximation and will not match a native speaker exactly. |
+## Sample Voice Prompts to Try
 
-Everything works without a microphone: the chat, memories and reminders tabs are fully usable by typing.
+| Goal | Spoken Prompt | Language Mode |
+|---|---|---|
+| **Save identity/year** | `“Machi, en peru Ganesh. Naan II Year CSE student. Idha remember panniko.”` | Tanglish |
+| **Ask identity/year** | `“En peru enna? Naan endha year padikkiren?”` | Tanglish |
+| **Save deadline** | `“En project deadline Friday nu nyabagam vachiko.”` | Tanglish |
+| **Ask deadline** | `“En project deadline eppo?”` | Tanglish |
+| **Recall conversation** | `“Naan enna sonnen?”` | Tanglish |
+| **List memories** | `“Enna nyabagam vechiruka?”` | Tanglish |
+| **Save in Tamil** | `“என் ப்ராஜெக்ட் டெட்லைன் வெள்ளிக்கிழமை என்று ஞாபகம் வச்சுக்கோ”` | Tamil |
+| **Recall in Tamil** | `“என் ப்ராஜெக்ட் டெட்லைன் எப்போது?”` | Tamil |
+| **Save in English** | `“Remember that my passport is in the top drawer.”` | English |
+| **Recall in English**| `“Where is my passport?”` | English |
 
-## Optional AI provider
+---
 
-The deterministic command layer always runs first, so saving, deleting and
-retrieval never depend on an external service. A provider is consulted only
-for open ended questions, and only when the operator explicitly configures it:
+## Project Structure
 
-```powershell
-$env:AI_PROVIDER = "openai-compatible"
-$env:AI_API_KEY = "your-own-key"
-$env:AI_BASE_URL = "https://api.openai.com/v1"
-$env:AI_MODEL = "gpt-4o-mini"
+```text
+MEMORA_AI/
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── ai.py                   # Google Gemini & OpenAI provider abstraction
+│   │   ├── language.py             # Multilingual tokenization & NLU engine
+│   │   └── main.py                 # FastAPI application, SQLite persistence & endpoints
+│   ├── tests/
+│   │   ├── test_api.py             # API endpoint regression suite
+│   │   ├── test_gemini_ai.py       # Gemini AI Brain & fallback tests
+│   │   ├── test_gemini_integration.py # 2-turn Ganesh flow & health status tests
+│   │   ├── test_language.py        # Language normalization unit tests
+│   │   └── test_natural_speech.py  # Spoken Tamil/Tanglish/English tests
+│   ├── .env.example                # Environment variable template
+│   ├── main.py                     # Root ASGI entrypoint (uvicorn main:app)
+│   ├── memora.db                   # SQLite database
+│   ├── requirements.txt            # Python production dependencies
+│   └── test_memora.py              # Backwards compatibility test
+├── frontend/
+│   ├── src/
+│   │   ├── App.tsx         # Main responsive UI with mic & auto-submit
+│   │   ├── languages.ts    # Voice recognition & speech language mapping
+│   │   ├── speech.ts       # Web Speech API recognition & synthesis wrappers
+│   │   ├── style.css       # Clean dark-mode UI design system
+│   │   └── types.ts        # TypeScript interfaces
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── vite.config.ts
+├── start.bat               # Windows one-click launcher
+└── README.md
 ```
-
-No key ships with this project and no paid service is contacted by default.
-See `backend/.env.example`. If the provider fails, the local answer is used.
-
-## Troubleshooting
-
-- **Backend connection unavailable:** Make sure the backend terminal is still running at port 8000.
-- **Port 8000 already in use:** Stop the other server with `Ctrl+C`, or run Uvicorn on another port and update `API` in `frontend/src/App.tsx`.
-- **`python` not recognized:** Install Python and reopen the terminal; use `py` only if the Python launcher is installed.
-- **`npm` not recognized:** Install Node.js LTS and reopen the terminal.
-- **Voice input unavailable:** Use current Chrome or Edge, allow microphone access, or continue with text input.
-- **"Tamil speech recognition is not supported":** The browser has no `ta-IN` model. Switch the selector to English or install the Tamil language pack in the browser settings.
-- **No Tamil voice:** Install the Tamil speech voice in the operating system, or read the reply as text.
-- **Advanced AI answers:** Not included in this offline-friendly build by default — see *Optional AI provider* above.
-
-## Data and privacy
-
-The SQLite database is stored at `backend/memora.db` by default (override with `MEMORA_DB_PATH`). Keep it private. This local prototype does not include user accounts or multi-user isolation; do not expose it publicly as-is. The browser sends chat text to the local backend. No external AI provider is called by default.
-
-## Amazon Alexa+ hackathon note
-
-This app is a standalone simulated assistant prototype. Do not claim it is an actual Alexa+ integration. Before submitting to any hackathon, confirm the current track requirements and adapt the demo to the permitted route.

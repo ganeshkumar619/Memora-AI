@@ -173,8 +173,8 @@ class AskPayload(BaseModel):
 # --------------------------------------------------------------------------- #
 
 @app.get("/api/health")
-def health():
-    status = ai.provider_status()
+def health(check: bool = False):
+    status = ai.provider_status(check_live=check)
     return {
         "status": "ok",
         "app": "MEMORA AI",
@@ -182,7 +182,10 @@ def health():
         "languages": [lang.MODE_TAMIL, lang.MODE_TANGLISH, lang.MODE_ENGLISH],
         "ai_provider": status["ai_provider"],
         "ai_model": status.get("ai_model", ""),
+        "configured_model": status.get("configured_model"),
         "mode": status["mode"],
+        "connected": status.get("connected", False),
+        "error": status.get("error"),
         "message": status.get("message", ""),
     }
 
@@ -355,8 +358,8 @@ def assistant_compat(payload: AskPayload):
 
 REPLIES: Dict[str, Dict[str, str]] = {
     "saved": {
-        "en-IN": "I saved this to your local memory: “{content}”",
-        "ta-IN": "இதை உங்கள் உள்ள நினைவில் சேமித்துவிட்டேன்: “{content}”",
+        "en-IN": "I saved this to your memory: “{content}”",
+        "ta-IN": "இதை உங்கள் நினைவில் சேமித்துவிட்டேன்: “{content}”",
         "tanglish": "Idhai ungal ninaivil save pannitten: “{content}”",
     },
     "confirm_saved": {
@@ -365,9 +368,49 @@ REPLIES: Dict[str, Dict[str, str]] = {
         "tanglish": "Ungal ninaivil save pannappattathu: “{content}”",
     },
     "relative_note": {
-        "en-IN": "I read “{phrase}” as {resolved}.",
-        "ta-IN": "“{phrase}” என்பதை நான் {resolved} எனப் படித்துள்ளேன்.",
-        "tanglish": "“{phrase}” nu sonnadha {resolved} nu note pannitten.",
+        "en-IN": "(“{phrase}” is {resolved})",
+        "ta-IN": "(“{phrase}” என்பது {resolved} என்று குறிக்கப்பட்டது)",
+        "tanglish": "(“{phrase}” nu sonnadhu {resolved} nu note pannitten)",
+    },
+    "exam_wish": {
+        "en-IN": "All the best for your exam! You'll do great. Would you like me to remember this date? Reply “Yes” or “Save it”.",
+        "ta-IN": "தேர்வுக்கு மனமார்ந்த வாழ்த்துகள்! சிறப்பாக எழுதி வெற்றி பெற வாழ்த்துகிறேன். இதை உங்கள் நினைவில் சேமிக்க வேண்டுமா? “சேமி” அல்லது “ஆம்” என்று கூறலாம்.",
+        "tanglish": "Exam-ku all the very best! Nalla ezhudhunga. Idhai ungal memory la save panna venuma? “Save pannu” nu sollunga.",
+    },
+    "interview_wish": {
+        "en-IN": "Best of luck with your interview! Would you like me to note this down in your memories?",
+        "ta-IN": "உங்கள் நேர்காணலுக்கு நல்வாழ்த்துகள்! சிறப்பாக செய்யுங்கள். இதை நினைவில் குறித்துக்கொள்ளவா?",
+        "tanglish": "Interview-ku best of luck! Nalla pannunga. Idhai memory la note panni vekkava?",
+    },
+    "travel_wish": {
+        "en-IN": "Have a safe and wonderful journey! Would you like me to save your travel details?",
+        "ta-IN": "இனிய பயணமாக அமைய வாழ்த்துகள்! பத்திரமாக சென்று வாருங்கள். பயண விவரங்களை சேமிக்க வேண்டுமா?",
+        "tanglish": "Happy and safe journey! Nalla poitu vaanga. Travel details memory la save panna venuma?",
+    },
+    "birthday_wish": {
+        "en-IN": "Warm wishes for the celebration! Would you like me to save this special date to your memories?",
+        "ta-IN": "இனிய நல்வாழ்த்துகள்! மகிழ்ச்சியாகக் கொண்டாடுங்கள். இந்த சிறப்பு நாளை நினைவில் சேமிக்க வேண்டுமா?",
+        "tanglish": "Iniya nalvazhthukkal! Happy ah celebrate pannunga. Indha date ah memory la save pannava?",
+    },
+    "health_care": {
+        "en-IN": "Please take good care of your health! Wishing you a speedy recovery. Would you like me to set a reminder or save any notes?",
+        "ta-IN": "உடல்நலத்தை நன்கு கவனித்துக் கொள்ளுங்கள்! விரைவில் நலமடைய வாழ்த்துகிறேன். ஏதேனும் குறிப்பை சேமிக்க வேண்டுமா?",
+        "tanglish": "Take care of your health! Seekiram gunamaaga vazhthukkal. Edhavadhu reminder or notes save panna venuma?",
+    },
+    "thanks_reply": {
+        "en-IN": "You're very welcome! I am always here to help you remember.",
+        "ta-IN": "மிக்க மகிழ்ச்சி! உங்களுக்கு உதவ எப்போதும் தயாராக இருக்கிறேன்.",
+        "tanglish": "Romba sandhosham! Ungalukku eppodhum help panna naan inge irukken.",
+    },
+    "praise_reply": {
+        "en-IN": "Thank you! What else would you like me to remember or look up?",
+        "ta-IN": "மிக்க நன்றி! அடுத்து நான் என்ன செய்ய வேண்டும் என்று சொல்லுங்கள்.",
+        "tanglish": "Thanks a lot! Next enna pannanum nu sollunga.",
+    },
+    "general_ack": {
+        "en-IN": "I heard: “{content}”. Would you like me to save this to your memories? Reply “Yes” to save it.",
+        "ta-IN": "நான் கேட்டது: “{content}”. இதை உங்கள் நினைவில் சேமிக்கவா? சேமிக்க “ஆம்” அல்லது “சேமி” என்று சொல்லுங்கள்.",
+        "tanglish": "Naan ketten: “{content}”. Idhai ungal memory la save pannava? Save panna “aam” or “yes” nu sollunga.",
     },
     "empty_content": {
         "en-IN": "What would you like me to remember? Tell me the fact to save.",
@@ -503,6 +546,7 @@ def reply_text(key: str, mode: str, **kwargs) -> str:
 
 def resolve_relative_date(phrase: str) -> str:
     today = datetime.now()
+    p = phrase.strip().lower()
     mapping = {
         "day after tomorrow": timedelta(days=2),
         "tomorrow": timedelta(days=1),
@@ -517,18 +561,44 @@ def resolve_relative_date(phrase: str) -> str:
         "this evening": timedelta(days=0),
         "tomorrow morning": timedelta(days=1),
         "tomorrow evening": timedelta(days=1),
-        "நாளை": timedelta(days=1),
-        "நாளைய": timedelta(days=1),
+        "yesterday": timedelta(days=-1),
+        # Tanglish
+        "naala marunaal": timedelta(days=2),
+        "naalaikku kaalaila": timedelta(days=1),
+        "naalaikku evening": timedelta(days=1),
+        "naalaikku": timedelta(days=1),
+        "naalaiku": timedelta(days=1),
+        "nalaiku": timedelta(days=1),
+        "nalaikki": timedelta(days=1),
+        "innikku": timedelta(days=0),
+        "innaiku": timedelta(days=0),
+        "nethu": timedelta(days=-1),
+        "netthu": timedelta(days=-1),
+        # Tamil script
+        "நாளை மறுநாள்": timedelta(days=2),
+        "நாளை மறுதினம்": timedelta(days=2),
         "நாளை மாலை": timedelta(days=1),
         "நாளை மாலையில்": timedelta(days=1),
+        "நாளை காலை": timedelta(days=1),
+        "நாளை காலையில்": timedelta(days=1),
+        "நாளை இரவு": timedelta(days=1),
+        "நாளைக்கு": timedelta(days=1),
+        "நாளைக்கி": timedelta(days=1),
+        "நாளை": timedelta(days=1),
+        "நாளைய": timedelta(days=1),
+        "இன்னைக்கு": timedelta(days=0),
+        "இன்னிக்கு": timedelta(days=0),
         "இன்று": timedelta(days=0),
+        "இன்றைய": timedelta(days=0),
         "இந்நாள்": timedelta(days=0),
         "இப்போது": timedelta(days=0),
+        "நேற்று": timedelta(days=-1),
+        "நேத்து": timedelta(days=-1),
         "வரும் வாரம்": timedelta(days=7),
         "அடுத்த வாரம்": timedelta(days=7),
         "அடுத்த மாதம்": timedelta(days=30),
     }
-    offset = mapping.get(phrase, timedelta(days=0))
+    offset = mapping.get(p, timedelta(days=0))
     return (today + offset).strftime("%d %b %Y")
 
 
@@ -564,14 +634,21 @@ def find_memories(term: str) -> List[dict]:
 
 def looks_like_personal_fact(text: str) -> bool:
     lowered = text.lower()
-    if re.search(r"(?<![\w])(en|naan|namma|my|our)(?![\w])", lowered):
+    if re.search(r"(?<![\w])(en|naan|namma|my|our|i|me|mine)(?![\w])", lowered):
         return True
-    for word in ("என்", "எனது", "என்னது"):
+    for word in ("என்", "எனது", "என்னது", "எனக்கு", "நான்", "நாம்", "நமக்கு"):
         if re.search(r"(?<![\w])" + re.escape(word) + r"(?![\w])", lowered):
             return True
     for day in lang.WEEKDAYS:
         if day in lowered:
             return True
+    for rel in lang.RELATIVE_DATES:
+        if re.search(r"(?<![\w])" + re.escape(rel.lower()) + r"(?![\w])", lowered):
+            return True
+    if re.search(r"\b(?:exam|test|interview|office|job|meeting|project|deadline|flight|train|travel|trip|doctor|hospital|fever|medicine|birthday|anniversary)\b", lowered):
+        return True
+    if re.search(r"(?:எக்ஸாம்|தேர்வு|பரீட்சை|நேர்காணல்|வேலை|மீட்டிங்|பயணம்|பிறந்தநாள்|மருத்துவர்|டாக்டர்)", text):
+        return True
     if re.search(r"\d{1,2}[/-]\d{1,2}", text):
         return True
     return False
@@ -721,8 +798,10 @@ def handle_reminder_list(mode: str, analysis: Optional[lang.Analysis] = None):
 
 
 def handle_statement(analysis: lang.Analysis, mode: str, message: str):
-    """Handle statement or question under local fallback rules."""
-    # Special query: "Naan enna sonnen?" / "What did I say?"
+    """Handle statement or question under local fallback rules with rich conversational replies."""
+    lowered = message.lower()
+
+    # 1. Special query: "Naan enna sonnen?" / "What did I say?" / "நான் என்ன சொன்னேன்"
     if re.search(r"\b(?:naan\s+enna\s+sonnen|what\s+did\s+i\s+say|நான்\s+என்ன\s+சொன்னேன்)\b", message, re.I):
         hist = [h for h in get_chat_history(limit=5) if h["role"] == "user"]
         prev_user_msg = hist[-2]["text"] if len(hist) >= 2 else (hist[-1]["text"] if hist else "")
@@ -744,33 +823,128 @@ def handle_statement(analysis: lang.Analysis, mode: str, message: str):
                 reply = f"From your memories: “{mems[0]['content']}”"
             return chat_response(reply, mode, "recall", analysis)
 
-    # Special query: "Enna nyabagam vechiruka?" / "What have you remembered?"
-    if re.search(r"\b(?:enna\s+nyabagam\s+(?:vechiruka|vechirukke|irukku|irukka)|what\s+do\s+you\s+remember)\b", message, re.I):
+    # 2. Special query: "Enna nyabagam vechiruka?" / "What do you remember?" / "எனக்கு என்ன ஞாபகம் வைத்திருக்கிறாய்"
+    if re.search(
+        r"(?:enna\s+nyabagam\s+(?:vechiruka|vechirukke|vechirukka|irukku|irukka)|what\s+do\s+you\s+remember|என்ன\s+ஞாபகம்\s+வைத்திருக்கிறாய்|என்ன\s+ஞாபகம்\s+இருக்கு)",
+        message,
+        re.I,
+    ):
         items = list_memories()
         if not items:
             return chat_response(reply_text("empty_memory", mode), mode, "list_memories", analysis)
-        listing = "\n" + "\n".join(f"• {item['content']}" for item in items[:20])
+        unique_contents = list(dict.fromkeys(item["content"] for item in items[:25]))
+        listing = "\n" + "\n".join(f"• {c}" for c in unique_contents)
         return chat_response(
             reply_text("list_header", mode) + listing, mode, "list_memories", analysis
         )
 
-    if not analysis.is_question and looks_like_personal_fact(message):
-        content = lang.extract_save_content(message, analysis.language)
-        if content:
-            return chat_response(
-                reply_text("ask_save", mode, content=content),
-                mode,
-                "statement",
-                analysis,
-                pending={"action": "save_memory", "content": content},
-            )
+    # 3. Thanks / Appreciation
+    if re.search(r"\b(?:thanks|thank\s+you|thx|நன்றி|ரொம்ப\s+நன்றி|nandri)\b", lowered):
+        return chat_response(reply_text("thanks_reply", mode), mode, "chat", analysis)
 
+    # 4. Praise / Positive feedback
+    if re.search(r"\b(?:super|sema|great|awesome|cool|nice|அருமை|சூப்பர்|சிறப்பு)\b", lowered):
+        return chat_response(reply_text("praise_reply", mode), mode, "chat", analysis)
+
+    # 5. Exam / Test / Study (e.g. "நாளைக்கு எனக்கு எக்ஸாம்")
+    if re.search(r"(?:exam|test|படிப்பு|தேர்வு|எக்ஸாம்|பரீட்சை)", lowered):
+        return chat_response(
+            reply_text("exam_wish", mode),
+            mode,
+            "statement",
+            analysis,
+            pending={"action": "save_memory", "content": message},
+        )
+
+    # 6. Interview / Job
+    if re.search(r"(?:interview|job|வேலை|நேர்காணல்)", lowered):
+        return chat_response(
+            reply_text("interview_wish", mode),
+            mode,
+            "statement",
+            analysis,
+            pending={"action": "save_memory", "content": message},
+        )
+
+    # 7. Travel / Trip
+    if re.search(r"(?:travel|trip|journey|flight|train|பயணம்|டிரிப்|ஊருக்கு)", lowered):
+        return chat_response(
+            reply_text("travel_wish", mode),
+            mode,
+            "statement",
+            analysis,
+            pending={"action": "save_memory", "content": message},
+        )
+
+    # 8. Birthday / Celebration
+    if re.search(r"(?:birthday|anniversary|பிறந்தநாள்|பிறந்த நாள்|திருமண நாள்)", lowered):
+        return chat_response(
+            reply_text("birthday_wish", mode),
+            mode,
+            "statement",
+            analysis,
+            pending={"action": "save_memory", "content": message},
+        )
+
+    # 9. Health / Doctor / Hospital
+    if re.search(r"(?:doctor|hospital|fever|sick|medicine|உடம்பு|மருத்துவர்|காய்ச்சல்|மருந்து)", lowered):
+        return chat_response(
+            reply_text("health_care", mode),
+            mode,
+            "statement",
+            analysis,
+            pending={"action": "save_memory", "content": message},
+        )
+
+    # 10. Question recalling a topic (e.g. "En project deadline eppo?")
     if analysis.is_question:
         topic = lang.extract_question_topic(message, analysis.language)
         if topic:
             items = find_memories(topic)
             if items:
-                listing = "\n" + "\n".join(f"• {item['content']}" for item in items[:20])
+                unique_contents = list(dict.fromkeys(item["content"] for item in items[:15]))
+                if len(unique_contents) == 1:
+                    raw = unique_contents[0]
+                    # Check if asking about user's name/year
+                    name_match = re.search(r"(?:peru|peyar|name)\s*(?:is|:)?\s*([A-Za-z\u0B80-\u0BFF]+)", raw, re.I)
+                    year_match = re.search(r"((?:I{1,3}|IV|\d+)\s*(?:st|nd|rd|th)?\s*Year\s*[A-Za-z\s]*)", raw, re.I)
+                    topic_low = topic.lower()
+                    if ("peru" in topic_low or "name" in topic_low or "year" in topic_low) and (name_match or year_match):
+                        name = name_match.group(1) if name_match else ""
+                        year = year_match.group(1).strip() if year_match else ""
+                        if name and year:
+                            if mode == lang.MODE_TANGLISH:
+                                reply = f"Un peru {name}, nee {year}."
+                            elif mode == lang.MODE_TAMIL:
+                                reply = f"உங்கள் பெயர் {name}, நீங்கள் {year}."
+                            else:
+                                reply = f"Your name is {name}, you are a {year}."
+                            return chat_response(reply, mode, "recall", analysis)
+                        elif name:
+                            if mode == lang.MODE_TANGLISH:
+                                reply = f"Un peru {name}."
+                            elif mode == lang.MODE_TAMIL:
+                                reply = f"உங்கள் பெயர் {name}."
+                            else:
+                                reply = f"Your name is {name}."
+                            return chat_response(reply, mode, "recall", analysis)
+                        elif year:
+                            if mode == lang.MODE_TANGLISH:
+                                reply = f"Nee {year} padikkira."
+                            elif mode == lang.MODE_TAMIL:
+                                reply = f"நீங்கள் {year} பயில்கிறீர்கள்."
+                            else:
+                                reply = f"You are a {year}."
+                            return chat_response(reply, mode, "recall", analysis)
+
+                    if mode == lang.MODE_TANGLISH:
+                        reply = f"Ungal “{topic}” pathi save pannadhu: “{raw}”"
+                    elif mode == lang.MODE_TAMIL:
+                        reply = f"“{topic}” பற்றி நீங்கள் சேமித்தது: “{raw}”"
+                    else:
+                        reply = f"Saved memory for “{topic}”: “{raw}”"
+                    return chat_response(reply, mode, "recall", analysis)
+                listing = "\n" + "\n".join(f"• {c}" for c in unique_contents)
                 return chat_response(
                     reply_text("recall_found", mode, topic=topic) + listing,
                     mode,
@@ -784,12 +958,25 @@ def handle_statement(analysis: lang.Analysis, mode: str, message: str):
         if answered:
             return chat_response(answered, mode, "question", analysis, ai_used=True)
 
-    provider = ai.get_provider()
-    if provider is not None and provider.available():
+    # 11. Other personal facts / statements: acknowledge and offer to save
+    if looks_like_personal_fact(message):
+        content = lang.extract_save_content(message, analysis.language) or message
         return chat_response(
-            reply_text("fallback_ai_failed", mode), mode, "statement", analysis
+            reply_text("ask_save", mode, content=content),
+            mode,
+            "statement",
+            analysis,
+            pending={"action": "save_memory", "content": content},
         )
-    return chat_response(reply_text("fallback_local", mode), mode, "statement", analysis)
+
+    # 12. General conversational statement fallback
+    return chat_response(
+        reply_text("general_ack", mode, content=message),
+        mode,
+        "statement",
+        analysis,
+        pending={"action": "save_memory", "content": message},
+    )
 
 
 def handle_chat(payload: ChatRequest) -> dict:
@@ -823,7 +1010,17 @@ def handle_chat(payload: ChatRequest) -> dict:
     # --- 2. Try Google Gemini AI Brain if configured -------------------------
     provider = ai.get_provider()
     if provider is not None and provider.available():
-        memories = list_memories()
+        # Retrieve relevant memories using keyword/content search first, then full list
+        matching = find_memories(message)
+        all_mems = list_memories()
+        seen_ids = set()
+        combined_memories = []
+        for m in matching + all_mems:
+            if m["id"] not in seen_ids:
+                seen_ids.add(m["id"])
+                combined_memories.append(m)
+        memories = combined_memories[:40]
+
         history_items = get_chat_history(limit=6)
         ai_result = provider.analyze_and_respond(message, mode, memories, history_items)
         if ai_result and isinstance(ai_result, dict) and ai_result.get("reply"):
@@ -854,7 +1051,33 @@ def handle_chat(payload: ChatRequest) -> dict:
                 "saved": saved,
                 "pending": None,
                 "normalized": analysis.normalized,
+                "ai_provider": provider.name,
+                "ai_model": getattr(provider, "active_model", provider.model),
             }
+
+        # Provider is configured, but the request failed (e.g. quota, timeout, auth).
+        # Never silently replace Gemini failure with a fake AI response.
+        err_msg = provider.get_last_error_message() or "Gemini API request failed."
+        if mode == lang.MODE_TANGLISH:
+            err_reply = f"Gemini AI error: {err_msg}. AI connect aagala, adhanaala naan poi solla maatten."
+        elif mode == lang.MODE_TAMIL:
+            err_reply = f"Gemini AI பிழை: {err_msg}. AI வழங்கலை தற்போது அணுக முடியவில்லை."
+        else:
+            err_reply = f"Gemini AI error: {err_msg}. Could not reach the configured AI provider, so I will not guess."
+
+        save_chat_turn(message, err_reply)
+        return {
+            "reply": err_reply,
+            "mode": "ai-error",
+            "intent": "error",
+            "language": mode,
+            "detected_language": analysis.language,
+            "saved": False,
+            "pending": None,
+            "normalized": analysis.normalized,
+            "ai_provider": provider.name,
+            "error": err_msg,
+        }
 
     # --- 3. Deterministic Local Fallback Dispatch ----------------------------
     res: dict
@@ -869,7 +1092,8 @@ def handle_chat(payload: ChatRequest) -> dict:
         if not items:
             res = chat_response(reply_text("empty_memory", mode), mode, "list_memories", analysis)
         else:
-            listing = "\n" + "\n".join(f"• {item['content']}" for item in items[:20])
+            unique_contents = list(dict.fromkeys(item["content"] for item in items[:25]))
+            listing = "\n" + "\n".join(f"• {c}" for c in unique_contents)
             res = chat_response(
                 reply_text("list_header", mode) + listing, mode, "list_memories", analysis
             )
